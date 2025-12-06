@@ -20,11 +20,11 @@ def get_climate_for_city(city_name: str) -> Dict[str, Any]:
         "asl": loc["asl"],
         "startdate": "2020-01-01",
         "enddate": "2020-12-31",
-        "tz": "Europe/Zurich",  # kann man später dynamisieren
+        "tz": "Europe/Zurich",
         "name": loc["name"],
         "format": "json",
         "apikey": METEOBLUE_API_KEY,
-        # 'package' ist implizit in der URL (modelclimate-day)
+        # 'package' is implicitly in the URL (modelclimate-day)
     }
 
     resp = requests.get(BASE_URL, params=params, timeout=20)

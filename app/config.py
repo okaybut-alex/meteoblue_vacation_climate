@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-# .env Datei laden (liegt im Projekt-Root)
+# .env load file (in project root)
 load_dotenv()
 
 METEOBLUE_API_KEY = os.getenv("METEOBLUE_API_KEY")

@@ -17,11 +17,26 @@ app = FastAPI(
     description="Prototype API to explore long-term climate data for travel planning."
 )
 
+MONTH_NAMES = {
+    1: "January",
+    2: "February",
+    3: "March",
+    4: "April",
+    5: "May",
+    6: "June",
+    7: "July",
+    8: "August",
+    9: "September",
+    10: "October",
+    11: "November",
+    12: "December",
+}
+
 
 @app.get("/", tags=["health"])
 def health() -> Dict[str, str]:
     """
-    Einfacher Healthcheck – gut für Screenshots und zum Testen.
+    simple healthcheck
     """
     return {"status": "ok"}
 
@@ -29,15 +44,15 @@ def health() -> Dict[str, str]:
 @app.get("/climate/{city_name}", tags=["climate"])
 def climate_for_city(city_name: str) -> Dict[str, Any]:
     """
-    Liefert die Climate-Daten (meteoblue modelclimate-day) für eine konfigurierte Stadt.
+    delivers climate (meteoblue modelclimate-day) for the selected city.
     """
     try:
         data = get_climate_for_city(city_name)
     except ValueError as e:
-        # City nicht in CITY_COORDS konfiguriert
+        # if city not configured
         raise HTTPException(status_code=404, detail=str(e))
     except RuntimeError as e:
-        # Fehler von meteoblue
+        # error from meteoblue
         raise HTTPException(status_code=502, detail=str(e))
 
     return data
@@ -45,7 +60,7 @@ def climate_for_city(city_name: str) -> Dict[str, Any]:
 def best_time_for_city(city_name: str) -> Dict[str, Any]:
     """
     Returns the best months to visit a city based on monthly climate normals.
-    
+
     Uses:
     - temperature_mean_daily_max  (°C, ideal around 24°C)
     - precipitation_mean          (mm, less is better)
@@ -63,16 +78,9 @@ def best_time_for_city(city_name: str) -> Dict[str, Any]:
     if not climate:
         raise HTTPException(status_code=500, detail="No modelclimate data found in response")
 
-    # Monate (1..12)
     months = climate.get("month")
-
-    # Temperatur: daily max (beste Proxy für “Sommergefühl”)
     temps = climate.get("temperature_mean_daily_max")
-
-    # Niederschlag
     precs = climate.get("precipitation_mean")
-
-    # Sonnentage (ist alles, was wir haben)
     suns = climate.get("sunshine_days")
 
     if not (months and temps and precs and suns):
@@ -83,25 +91,37 @@ def best_time_for_city(city_name: str) -> Dict[str, Any]:
     for i, month in enumerate(months):
         temp = temps[i]
         precip = precs[i]
-        sunshine_days = suns[i]  # 0..31
+        sunshine_days = suns[i]
 
-        # Machen wir daraus einen Stundenwert (notwendig für sunshine_score)
-        sunshine_hours = sunshine_days * 5  # pragmatische Heuristik: 5h pro sunshine_day
+        # einfache Heuristik: ca. 5h Sonne pro "sunshine day"
+        sunshine_hours = sunshine_days * 5.0
 
         score = comfort_index(temp, precip, sunshine_hours)
 
         month_scores.append({
             "month": month,
+            "month_name": MONTH_NAMES.get(month, str(month)),
             "temp": temp,
             "precip": precip,
             "sunshine_days": sunshine_days,
             "score": score
         })
 
-    # Top 3 Monate
+    if not month_scores:
+        raise HTTPException(status_code=500, detail="No usable climate data for scoring")
+
     top = sorted(month_scores, key=lambda x: x["score"], reverse=True)[:3]
+
+    best = top[0]
+    best_month_name = best["month_name"]
+
+    summary = (
+        f"The best month to visit {city_name} based on the climate comfort index "
+        f"is {best_month_name}."
+    )
 
     return {
         "city": city_name,
+        "summary": summary,
         "best_months": top
     }

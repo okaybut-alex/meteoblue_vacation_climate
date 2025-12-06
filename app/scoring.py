@@ -1,7 +1,7 @@
 def temp_score(t: float) -> float:
     """
-    Idealtemperatur ~24°C, je weiter weg, desto schlechter.
-    10–32°C = ok, darunter/darüber 0 Punkte.
+    ideal temperature ~24°C, the further away, the worse.
+    10–32°C = ok, below/above 0 Punkte.
     """
     if t < 10 or t > 32:
         return 0.0
@@ -11,8 +11,8 @@ def temp_score(t: float) -> float:
 
 def precip_score(p: float) -> float:
     """
-    0 mm = 10 Punkte, 100+ mm = 0.
-    Linearer Abfall dazwischen.
+    0 mm = 10 points, 100+ mm = 0.
+    linear decline in between.
     """
     if p <= 0:
         return 10.0
@@ -23,7 +23,7 @@ def precip_score(p: float) -> float:
 
 def sunshine_score(h: float) -> float:
     """
-    0 Stunden = 0, 10+ Stunden = 10.
+    0 hours = 0, 10+ hours = 10.
     """
     if h <= 0:
         return 0.0
@@ -34,9 +34,9 @@ def sunshine_score(h: float) -> float:
 
 def comfort_index(temp: float, precip: float, sunshine: float) -> float:
     """
-    Kombiniert Temperatur, Niederschlag und Sonnenscheindauer.
+    combines temperature, precipitation and sunshine duration.
 
-    Rückgabe: 0..10 (höher = besser)
+    return: 0..10 (higher = better)
     """
     scores = [
         temp_score(temp),
